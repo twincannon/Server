@@ -540,7 +540,7 @@ RULE_INT(Combat, MaxRampageTargets, 3, "Maximum number of people hit with rampag
 RULE_INT(Combat, DefaultRampageTargets, 1, "Default number of people to hit with rampage")
 RULE_BOOL(Combat, RampageHitsTarget, false, "Rampage will hit the target if it still has targets left")
 RULE_INT(Combat, MaxFlurryHits, 2, "Maximum number of extra hits from flurry")
-RULE_INT(Combat, MinHastedDelay, 400, "Minimum hasted combat delay")
+RULE_INT(Combat, MinHastedDelay, 100, "Minimum hasted combat delay")
 RULE_REAL(Combat, AvgDefProcsPerMinute, 2.0, "Average defense procs per minute")
 RULE_REAL(Combat, DefProcPerMinAgiContrib, 0.075, "How much agility contributes to defensive proc rate")
 RULE_INT(Combat, NPCFlurryChance, 20, "Chance for NPC to flurry")

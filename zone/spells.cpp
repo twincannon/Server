@@ -1562,7 +1562,8 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 						spellbonuses.ChannelChanceItems + itembonuses.ChannelChanceItems + aabonuses.ChannelChanceItems :
 						spellbonuses.ChannelChanceSpells + itembonuses.ChannelChanceSpells + aabonuses.ChannelChanceSpells;
 				// max 93% chance at 252 skill
-				channelchance = 30 + GetSkill(EQ::skills::SkillChanneling) / 400.0f * 100;
+				channelchance = 60 + GetSkill(EQ::skills::SkillChanneling) / 400.0f * 100; // twin: Be more lenient with being attacked
+				channelchance = std::min(channelchance, 100.f);
 				channelchance -= attacked_count * 2;
 				channelchance += channelchance * channelbonuses / 100.0f;
 			} else {
@@ -1577,13 +1578,13 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 			{
 				d_x = std::abs(std::abs(GetX()) - std::abs(GetSpellX()));
 				d_y = std::abs(std::abs(GetY()) - std::abs(GetSpellY()));
-				if(d_x < 5 && d_y < 5)
+				if(d_x < 25 && d_y < 25) // twin: Be more lenient with moving
 				{
 					//avoid the square root...
 					distance_moved = d_x * d_x + d_y * d_y;
 					// if you moved 1 unit, that's 25% off your chance to regain.
 					// if you moved 2, you lose 100% off your chance
-					distancemod = distance_moved * 25;
+					distancemod = distance_moved / 10; //distancemod = distance_moved * 25;
 					channelchance -= distancemod;
 				}
 				else
