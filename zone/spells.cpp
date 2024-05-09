@@ -2499,6 +2499,25 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 		return(false);
 	}
 
+	// Heal target's target with beneficial spells
+	if (IsBeneficialSpell(spell_id) &&
+		spell_target &&
+		!spell_target->IsPetOwnerClient() &&
+		!spell_target->IsClient() &&
+		!spell_target->IsCharmed() &&
+		!IsEffectInSpell(spell_id, SE_Revive) //Rezzes are beneficial spells, but need to target self.
+		) {
+		if (IsClient() &&
+			spell_target->GetTarget() != nullptr && //enemy has a target
+			spell_target->GetTarget()->IsClient() //it's a client
+			) {
+			spell_target = spell_target->GetTarget();
+		}
+		else {
+			spell_target = this;
+		}
+	}
+
 	//If spell was casted then we already checked these so skip, otherwise check here if being called directly from spell finished.
 	if (!from_casted_spell) {
 		if (!DoCastingChecksZoneRestrictions(true, spell_id)) {

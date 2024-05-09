@@ -384,7 +384,7 @@ void Mob::AddItemBonuses(const EQ::ItemInstance* inst, StatBonuses* b, bool is_a
 			b->HeroicCorrup += CalcRecommendedLevelBonus(current_level, recommended_level, item->HeroicSVCorrup);
 		}
 
-		if (b->haste > 0) {
+		if (item->Haste > 0) {
 			b->haste += item->Haste; // twin: Make haste items stack
 		}
 
