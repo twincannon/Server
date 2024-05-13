@@ -964,41 +964,25 @@ int Client::CalcHaste()
 	if (spellbonuses.haste) {
 		h += spellbonuses.haste - spellbonuses.inhibitmelee;
 	}
-	if (spellbonuses.hastetype2 && level > 49) { // type 2 is capped at 10% and only available to 50+
+	if (spellbonuses.hastetype2) { // type 2 is capped at 10% and only available to 50+
 		h += spellbonuses.hastetype2 > 10 ? 10 : spellbonuses.hastetype2;
 	}
-	// 26+ no cap, 1-25 10
-	if (level > 25 || RuleB(Character, IgnoreLevelBasedHasteCaps)) { // 26+
-		h += itembonuses.haste;
-	}
-	else {   // 1-25
-		h += itembonuses.haste > 10 ? 10 : itembonuses.haste;
-	}
-	// 60+ 100, 51-59 85, 1-50 level+25
-	if (level > 59 || RuleB(Character, IgnoreLevelBasedHasteCaps)) { // 60+
-		cap = RuleI(Character, HasteCap);
-	}
-	else if (level > 50) {  // 51-59
-		cap = 85;
-	}
-	else {   // 1-50
-		cap = level + 25;
-	}
+	
+	h += itembonuses.haste; // twin: Remove level caps for haste in general
+
+	cap = RuleI(Character, HasteCap);
+
 	if (h > cap) {
 		h = cap;
 	}
-	// 51+ 25 (despite there being higher spells...), 1-50 10
-	if (level > 50 || RuleB(Character, IgnoreLevelBasedHasteCaps)) { // 51+
-		cap = RuleI(Character, Hastev3Cap);
-		if (spellbonuses.hastetype3 > cap) {
-			h += cap;
-		} else {
-			h += spellbonuses.hastetype3;
-		}
+
+	cap = RuleI(Character, Hastev3Cap);
+	if (spellbonuses.hastetype3 > cap) {
+		h += cap;
+	} else {
+		h += spellbonuses.hastetype3;
 	}
-	else {   // 1-50
-		h += spellbonuses.hastetype3 > 10 ? 10 : spellbonuses.hastetype3;
-	}
+
 	h += extra_haste;	//GM granted haste.
 	Haste = 100 + h;
 	return Haste;
