@@ -3142,25 +3142,28 @@ bool Client::BindWound(Mob *bindmob, bool start, bool fail)
 						int maxHPBonus = spellbonuses.MaxBindWound + itembonuses.MaxBindWound +
 							aabonuses.MaxBindWound;
 
-						int max_percent = 50 + maxHPBonus;
+						int max_percent = 100;
+						//int max_percent = 50 + maxHPBonus;
 
-						if (GetClass() == Class::Monk && GetSkill(EQ::skills::SkillBindWound) > 200) {
-							max_percent = 70 + maxHPBonus;
-						}
+						//if (GetClass() == Class::Monk && GetSkill(EQ::skills::SkillBindWound) > 200) {
+						//	max_percent = 70 + maxHPBonus;
+						//}
 
 						int64 max_hp = bindmob->GetMaxHP() * max_percent / 100;
 
 						// send bindmob new hp's
 						if (bindmob->GetHP() < bindmob->GetMaxHP() && bindmob->GetHP() <= (max_hp)-1) {
 							// 0.120 per skill point, 0.60 per skill level, minimum 3 max 30
-							int bindhps = 3;
+							int bindhps = 30;
 
-							if (GetSkill(EQ::skills::SkillBindWound) > 200) {
-								bindhps += GetSkill(EQ::skills::SkillBindWound) * 4 / 10;
-							}
-							else if (GetSkill(EQ::skills::SkillBindWound) >= 10) {
-								bindhps += GetSkill(EQ::skills::SkillBindWound) / 4;
-							}
+							bindhps += GetSkill(EQ::skills::SkillBindWound) * 5 / 10;
+
+							//if (GetSkill(EQ::skills::SkillBindWound) > 200) {
+							//	bindhps += GetSkill(EQ::skills::SkillBindWound) * 4 / 10;
+							//}
+							//else if (GetSkill(EQ::skills::SkillBindWound) >= 10) {
+							//	bindhps += GetSkill(EQ::skills::SkillBindWound) / 4;
+							//}
 
 							// Implementation of aaMithanielsBinding is a guess (the multiplier)
 							int bindBonus = spellbonuses.BindWound + itembonuses.BindWound +
@@ -3191,13 +3194,13 @@ bool Client::BindWound(Mob *bindmob, bool start, bool fail)
 						}
 					}
 					else {
-						int percent_base = 50;
-						if (GetRawSkill(EQ::skills::SkillBindWound) > 200) {
-							if ((GetClass() == Class::Monk) || (GetClass() == Class::Beastlord))
-								percent_base = 70;
-							else if ((GetLevel() > 50) && ((GetClass() == Class::Warrior) || (GetClass() == Class::Rogue) || (GetClass() == Class::Cleric)))
-								percent_base = 70;
-						}
+						int percent_base = 100;
+						//if (GetRawSkill(EQ::skills::SkillBindWound) > 200) {
+						//	if ((GetClass() == Class::Monk) || (GetClass() == Class::Beastlord))
+						//		percent_base = 70;
+						//	else if ((GetLevel() > 50) && ((GetClass() == Class::Warrior) || (GetClass() == Class::Rogue) || (GetClass() == Class::Cleric)))
+						//		percent_base = 70;
+						//}
 
 						int percent_bonus = 0;
 						if (percent_base >= 70)
@@ -3214,11 +3217,14 @@ bool Client::BindWound(Mob *bindmob, bool start, bool fail)
 							max_hp = bindmob->GetMaxHP();
 
 						if (bindmob->GetHP() < bindmob->GetMaxHP() && bindmob->GetHP() < max_hp) {
-							int bindhps = 3; // base bind hp
-							if (percent_base >= 70)
-								bindhps = (GetSkill(EQ::skills::SkillBindWound) * 4) / 10; // 8:5 skill-to-hp ratio
-							else if (GetSkill(EQ::skills::SkillBindWound) >= 12)
-								bindhps = GetSkill(EQ::skills::SkillBindWound) / 4; // 4:1 skill-to-hp ratio
+							int bindhps = 30; // base bind hp
+
+							bindhps += (GetSkill(EQ::skills::SkillBindWound) * 5) / 10;
+
+							//if (percent_base >= 70)
+							//	bindhps = (GetSkill(EQ::skills::SkillBindWound) * 4) / 10; // 8:5 skill-to-hp ratio
+							//else if (GetSkill(EQ::skills::SkillBindWound) >= 12)
+							//	bindhps = GetSkill(EQ::skills::SkillBindWound) / 4; // 4:1 skill-to-hp ratio
 
 							int bonus_hp_percent = 0;
 							if (percent_base >= 70)
