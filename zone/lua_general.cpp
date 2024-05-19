@@ -6757,6 +6757,7 @@ luabind::scope lua_register_events() {
 			luabind::value("spell_effect_translocate_complete", static_cast<int>(EVENT_SPELL_EFFECT_TRANSLOCATE_COMPLETE)),
 			luabind::value("combine_success ", static_cast<int>(EVENT_COMBINE_SUCCESS )),
 			luabind::value("combine_failure ", static_cast<int>(EVENT_COMBINE_FAILURE )),
+			luabind::value("combine_nocombine ", static_cast<int>(EVENT_COMBINE_NOCOMBINE)),
 			luabind::value("item_click", static_cast<int>(EVENT_ITEM_CLICK)),
 			luabind::value("item_click_cast", static_cast<int>(EVENT_ITEM_CLICK_CAST)),
 			luabind::value("group_change", static_cast<int>(EVENT_GROUP_CHANGE)),

@@ -405,10 +405,34 @@ void Object::HandleCombine(Client* user, const NewCombine_Struct* in_combine, Ob
 
 		LogTradeskillsDetail("Check 2");
 
-		if (!is_augmented) {
-			user->MessageString(Chat::Emote, TRADESKILL_NOCOMBINE);
-		} else {
-			user->Message(Chat::Emote, "You must remove augments from all component items before you can attempt this combine.");
+		bool print_message = true;
+
+		if (parse->PlayerHasQuestSub(EVENT_COMBINE_NOCOMBINE)) {
+			std::string slotid_itemid_table = "{";
+			for (uint8 slot_id = EQ::invbag::SLOT_BEGIN; slot_id < EQ::invtype::WORLD_SIZE; slot_id++) {
+				const EQ::ItemInstance* inst = container->GetItem(slot_id);
+				if (inst) {
+					slotid_itemid_table.append(itoa(slot_id));
+					slotid_itemid_table.append(" = ");
+					slotid_itemid_table.append(itoa(inst->GetID()));
+					slotid_itemid_table.append(",");
+				}
+			}
+			slotid_itemid_table.pop_back();
+			slotid_itemid_table.append("}");
+
+			if (parse->EventPlayer(EVENT_COMBINE_NOCOMBINE, user, slotid_itemid_table, EQ::InventoryProfile::CalcSlotId(in_combine->container_slot)) != 0) {
+				print_message = false;
+			}
+		}
+
+		if (print_message) {
+			if (!is_augmented) {
+				user->MessageString(Chat::Emote, TRADESKILL_NOCOMBINE);
+			}
+			else {
+				user->Message(Chat::Emote, "You must remove augments from all component items before you can attempt this combine.");
+			}
 		}
 
 		auto outapp = new EQApplicationPacket(OP_TradeSkillCombine, 0);

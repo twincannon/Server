@@ -1745,6 +1745,18 @@ void handle_player_spell_blocked(
 	lua_setfield(L, -2, "cast_spell");
 }
 
+void handle_player_combine_nocombine(
+	QuestInterface* parse,
+	lua_State* L,
+	Client* client,
+	std::string data,
+	uint32 extra_data,
+	std::vector<std::any>* extra_pointers
+) {
+	lua_pushstring(L, data.c_str());
+	lua_setfield(L, -2, "slotid_itemid_table");
+}
+
 // Item
 void handle_item_click(
 	QuestInterface *parse,

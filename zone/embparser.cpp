@@ -203,6 +203,7 @@ const char* QuestEventSubroutines[_LargestEventID] = {
 	"EVENT_ENTITY_VARIABLE_UPDATE",
 	"EVENT_AA_LOSS",
 	"EVENT_SPELL_BLOCKED",
+	"EVENT_COMBINE_NOCOMBINE",
 
 	// Add new events before these or Lua crashes
 	"EVENT_SPELL_EFFECT_BOT",
@@ -2137,6 +2138,11 @@ void PerlembParser::ExportEventVariables(
 
 			ExportVar(package_name.c_str(), "zone_id", zone_id.c_str());
 			ExportVar(package_name.c_str(), "tradeskill_id", tradeskill_id.c_str());
+			break;
+		}
+
+		case EVENT_COMBINE_NOCOMBINE: {
+			ExportVar(package_name.c_str(), "slotid_itemid_table", data);
 			break;
 		}
 
