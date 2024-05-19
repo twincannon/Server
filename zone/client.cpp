@@ -3767,7 +3767,83 @@ void Client::Escape()
 	MessageString(Chat::Skills, ESCAPE);
 }
 
-float Client::CalcPriceMod(Mob* other, bool reverse)
+float Client::CalcClassicPriceMod(Mob* other, bool reverse) {
+	float price_multiplier = 0.8f;
+
+	if (other && other->IsNPC()) {
+		FACTION_VALUE faction_level = GetFactionLevel(CharacterID(), other->CastToNPC()->GetNPCTypeID(), GetRace(), GetClass(), GetDeity(), other->CastToNPC()->GetPrimaryFaction(), other);
+		int32 cha = GetCHA();
+
+		if (faction_level <= FACTION_AMIABLY) {
+			cha += 11;		// amiable faction grants a defacto 11 charisma bonus
+		}
+
+		uint8 greed = other->CastToNPC()->GetGreedPercent();
+
+		// Sony's precise algorithm is unknown, but this produces output that is virtually identical
+		if (faction_level <= FACTION_INDIFFERENTLY) {
+			if (cha > 75) {
+				if (greed) {
+					// this is derived from curve fitting to a lot of price data
+					price_multiplier = -0.2487768 + (1.599635 - -0.2487768) / (1 + pow((cha / 135.1495), 1.001983));
+					price_multiplier += (greed + 25u) / 100.0f;  // default vendor markup is 25%; anything above that is 'greedy'
+					price_multiplier = 1.0f / price_multiplier;
+				}
+				else {
+					// non-greedy merchants use a linear scale
+					price_multiplier = 1.0f - ((115.0f - cha) * 0.004f);
+				}
+			}
+			else if (cha > 60) {
+				price_multiplier = 1.0f / (1.25f + (greed / 100.0f));
+			}
+			else {
+				price_multiplier = 1.0f / ((1.0f - (cha - 120.0f) / 220.0f) + (greed / 100.0f));
+			}
+		}
+		else { // apprehensive
+			if (cha > 75) {
+				if (greed) {
+					// this is derived from curve fitting to a lot of price data
+					price_multiplier = -0.25f + (1.823662 - -0.25f) / (1 + (cha / 135.0f));
+					price_multiplier += (greed + 25u) / 100.0f;  // default vendor markup is 25%; anything above that is 'greedy'
+					price_multiplier = 1.0f / price_multiplier;
+				}
+				else {
+					price_multiplier = (100.0f - (145.0f - cha) / 2.8f) / 100.0f;
+				}
+			}
+			else if (cha > 60) {
+				price_multiplier = 1.0f / (1.4f + greed / 100.0f);
+			}
+			else {
+				price_multiplier = 1.0f / ((1.0f + (143.574 - cha) / 196.434) + (greed / 100.0f));
+			}
+		}
+
+		float maxResult = 1.0f / 1.05;		// price reduction caps at this amount
+		if (price_multiplier > maxResult) {
+			price_multiplier = maxResult;
+		}
+
+		if (!reverse) {
+			price_multiplier = 1.0f / price_multiplier;
+		}
+	}
+
+	LogMerchants(
+		"[{}] [{}] items at [{}] price multiplier [{}] [{}]",
+		other->GetName(),
+		reverse ? "buys" : "sells",
+		price_multiplier,
+		reverse ? "from" : "to",
+		GetName()
+	);
+
+	return price_multiplier;
+}
+
+float Client::CalcNewPriceMod(Mob* other, bool reverse)
 {
 	float chaformula = 0;
 	if (other)
@@ -3811,6 +3887,17 @@ float Client::CalcPriceMod(Mob* other, bool reverse)
 	chaformula /= 100; //Convert to 0.10
 	chaformula += 1; //Convert to 1.10;
 	return chaformula; //Returns 1.10, expensive stuff!
+}
+
+float Client::CalcPriceMod(Mob* other, bool reverse)
+{
+	float price_mod = CalcNewPriceMod(other, reverse);
+
+	if (RuleB(Merchant, UseClassicPriceMod)) {
+		price_mod = CalcClassicPriceMod(other, reverse);
+	}
+
+	return price_mod;
 }
 
 void Client::GetGroupAAs(GroupLeadershipAA_Struct *into) const {
@@ -9286,6 +9373,7 @@ void Client::ShowDevToolsMenu()
 
 	menu_reload_five += Saylink::Silent("#reload merchants", "Merchants");
 	menu_reload_five += " | " + Saylink::Silent("#reload npc_emotes", "NPC Emotes");
+	menu_reload_five += " | " + Saylink::Silent("#reload npc_spells", "NPC Spells");
 	menu_reload_five += " | " + Saylink::Silent("#reload objects", "Objects");
 	menu_reload_five += " | " + Saylink::Silent("#reload opcodes", "Opcodes");
 
@@ -11367,6 +11455,15 @@ void Client::SendReloadCommandMessages() {
 		).c_str()
 	);
 
+	auto npc_spells_link = Saylink::Silent("#reload npc_spells");
+	Message(
+		Chat::White,
+		fmt::format(
+			"Usage: {} - Reloads NPC Spells globally",
+			npc_spells_link
+		).c_str()
+	);
+
 	auto objects_link = Saylink::Silent("#reload objects");
 
 	Message(
@@ -12440,4 +12537,44 @@ uint16 Client::GetSkill(EQ::skills::SkillType skill_id) const
 		) : m_pp.skills[skill_id] * (100 + itembonuses.skillmod[skill_id]) / 100) : m_pp.skills[skill_id]);
 	}
 	return 0;
+}
+
+void Client::RemoveItemBySerialNumber(uint32 serial_number, uint32 quantity)
+{
+	EQ::ItemInstance *item = nullptr;
+	static const int16 slots[][2] = {
+		{ EQ::invslot::POSSESSIONS_BEGIN, EQ::invslot::POSSESSIONS_END },
+		{ EQ::invbag::GENERAL_BAGS_BEGIN, EQ::invbag::GENERAL_BAGS_END },
+		{ EQ::invbag::CURSOR_BAG_BEGIN, EQ::invbag::CURSOR_BAG_END},
+		{ EQ::invslot::BANK_BEGIN, EQ::invslot::BANK_END },
+		{ EQ::invslot::GUILD_TRIBUTE_BEGIN, EQ::invslot::GUILD_TRIBUTE_END },
+		{ EQ::invbag::BANK_BAGS_BEGIN, EQ::invbag::BANK_BAGS_END },
+		{ EQ::invslot::SHARED_BANK_BEGIN, EQ::invslot::SHARED_BANK_END },
+		{ EQ::invbag::SHARED_BANK_BAGS_BEGIN, EQ::invbag::SHARED_BANK_BAGS_END },
+	};
+	int16 removed_count = 0;
+	const size_t slot_index_count = sizeof(slots) / sizeof(slots[0]);
+	for (int slot_index = 0; slot_index < slot_index_count; ++slot_index) {
+		for (int slot_id = slots[slot_index][0]; slot_id <= slots[slot_index][1]; ++slot_id) {
+			if (removed_count == quantity) {
+				break;
+			}
+
+			item = GetInv().GetItem(slot_id);
+			if (item && item->GetSerialNumber() == serial_number) {
+				int16 charges = item->IsStackable() ? item->GetCharges() : 0;
+				int16 stack_size = std::max(charges, static_cast<int16>(1));
+				if ((removed_count + stack_size) <= quantity) {
+					removed_count += stack_size;
+					DeleteItemInInventory(slot_id, charges, true);
+				} else {
+					int16 amount_left = (quantity - removed_count);
+					if (amount_left > 0 && stack_size >= amount_left) {
+						removed_count += amount_left;
+						DeleteItemInInventory(slot_id, amount_left, true);
+					}
+				}
+			}
+		}
+	}
 }
